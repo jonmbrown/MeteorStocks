@@ -1,0 +1,224 @@
+/* CSS on top of Bootstrap - Jon Brown - Nov 2014 */
+
+
+/* Tool tip below hovered item */
+a.xtooltip {outline:none; color: black }
+a.xtooltip strong {line-height:30px;}
+a.xtooltip:hover {text-decoration:none;}
+a.xtooltip span { z-index:10;display:none; padding:14px 20px; margin-top:20px; margin-left:-20px; width:90px; line-height:16px; }
+a.xtooltip:hover span{ display:inline; position:absolute; border:2px silver; color:black; background:white repeat-x 0 0; }
+.xcallout {z-index:20;position:absolute;border:0;top:-14px;left:120px;}
+/*CSS3 nice shadow */
+a.xtooltip span { border-radius:2px; box-shadow: 0px 0px 8px 4px gray;
+/*opacity: 0.8;*/ }
+
+.table-striped { /* Slightly smaller than the default. HAve used 50% too for desktop/laptop */
+  width: 95%;
+}
+
+td { /* JB */
+  text-align: right;
+}
+
+table thead tr th { /* JB */
+  text-align: right;
+}
+
+/* Dividend colours */
+
+.dateMatch {
+  color: blue;
+  font-weight: bold;
+}
+
+.dateNoMatch {
+/* Nothing special */
+}
+
+/* Stock news alert  - no longer used, uses a flag instead
+
+.stocknews {
+  color: black;
+  font-weight: bold;
+  background: yellow;
+}
+*/
+
+/* Stock movement colours */
+
+.bigDown {
+  color: red;
+  font-weight: bold;
+  background: yellow;
+}
+
+.bigUp {
+  color: green;
+  font-weight: bold;
+  background: yellow;
+}
+
+.priceDown {
+  color: red;
+}
+
+.priceUp {
+  color: green;
+}
+
+.unchanged {
+  color: blue;
+}
+
+.refresh {
+  background: none;
+  border: none;
+}
+
+.location { /* JB 11 DEC 2014 */
+  background: none;
+  border: none;
+}
+
+.camera { /* JB 11 DEC 2014 */
+  background: none;
+  border: none;
+}
+
+.update { /* Simple x for update */
+  background: none;
+  border: none;
+}
+
+.delete { /* Simple x for delete */
+  background: none;
+  border: none;
+}
+
+/* Heatmap 14 Jan 2015 - 9 colour range */
+/* Font-size is required to compensate for a bug in the rendering (the workaround of which means setting the font to 1px) */
+
+.HeatUp3 {
+  background: #00B050;
+  font-size: large;
+}
+
+.HeatUp2 {
+  background: #92D050;
+  font-size: large;
+}
+
+.HeatUp1 {
+  background: #CCFF99;
+  font-size: large;
+}
+
+.HeatUp0 {
+  background: #DEFF81;
+  font-size: large;
+}
+
+.HeatFlat {
+  background: white;
+  font-size: large;
+}
+
+.HeatDn0 {
+  background: #FFCC99;
+  font-size: large;
+}
+
+.HeatDn1 {
+  background: #F9AB6B;
+  font-size: large;
+}
+
+.HeatDn2 {
+  background: #F7633B;
+  font-size: large;
+}
+
+.HeatDn3 {
+  background: red;
+  font-size: large;
+}
+
+/* Style - 16 Jan 2015 */
+
+#HSUp3 {
+  background-color: #00B050;
+  font-size: large;
+}
+
+#HSUp2 {
+  background-color: #92D050;
+  font-size: large;
+}
+
+#HSUp1 {
+  background-color: #CCFF99;
+  font-size: large;
+}
+
+#HSUp0 {
+  background-color: #DEFF81;
+  font-size: large;
+}
+
+#HSFlat {
+  background-color: white;
+  font-size: large;
+}
+
+#HSDn0 {
+  background-color: #FFCC99;
+  font-size: large;
+}
+
+#HSDn1 {
+  background-color: #F9AB6B;
+  font-size: large;
+}
+
+#HSDn2 {
+  background-color: #F7633B;
+  font-size: large;
+}
+
+#HSDn3 {
+  background-color: red;
+  font-size: large;
+}
+
+/* Style for XD and paid-today in heatmap - 7 Feb 2015 */
+    
+#HSXD {
+  background-color: lightblue;
+  color: darkblue;
+/*  font-weight: bold; */
+  font-size: large;
+}
+
+#HSPaid {
+  background-color: gold;
+  color: darkblue;
+/*  font-weight: bold; */
+  font-size: large;
+}
+
+/* Style for News item in heatmap - 5 Mar 2015 */
+    
+#HSNews {
+  background-color: black;
+  color: white;
+/*  font-weight: bold; */
+  font-size: large;
+}
+
+/* Style for overseas stocks in heatmap - 29 Aug 2016 */
+    
+#HSOverseas {
+  background-color: indigo;
+  color: white;
+  font-size: large;
+}

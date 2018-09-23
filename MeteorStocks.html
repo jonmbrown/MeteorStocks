@@ -1,0 +1,239 @@
+<head>
+<title>Meteor Stocks</title>
+<link rel="icon" type="image/png" href="/favicon.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- JB Dec 2014 - Added to make Bootstrap work on Android Chrome -->
+<!-- 3 Dec 14 - using the package instead: meteor add mizzao:bootstrap-3
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap-theme.min.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>-->
+</head>
+<body>
+<!-- {{> yield}} -->
+</body>
+
+<!-- ========== METEOR TEMPLATE CODE ========== -->
+
+<template name="nav">
+    <!--glyphicons: http://getbootstrap.com/components -->
+    <div class="container">     
+    <!-- Static navbar -->
+      <div class="navbar navbar-default navbar-inverse" role="navigation">
+        <div class="container-fluid">
+          <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".navbar-collapse">
+              <span class="sr-only">Toggle navigation</span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span> <!-- 3 bar graphic for menus on mobile -->
+            </button>
+            <a class="navbar-brand" href="{{pathFor 'home'}}">Meteor Stocks</a>
+          </div>
+        <div class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+            <li><a href="{{pathFor 'news'}}"><span class="badge">News <span class="glyphicon glyphicon-flag"></span></span></a></li>
+            <li><a href="{{pathFor 'services'}}"><span class="badge">Services <span class="glyphicon glyphicon-paperclip"></span></span></a></li>
+            <li class="dropdown">
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown">More... <span class="caret"></span></a>
+                <ul class="dropdown-menu" role="menu">
+                    <li><a href="{{pathFor 'about'}}">About Us <span class="glyphicon glyphicon-info-sign"></span></a></li>
+                    <li class="divider"></li>
+                    <li class="dropdown-header">Details</li>
+                    <li><a href="{{pathFor 'help'}}">Help <span class="glyphicon glyphicon-question-sign"></span></a></li>
+                    <li class="divider"></li>
+                    <li><a href="#">&copy; MMXIV Jon Brown</a></li>
+                </ul>
+            </li>
+          </ul>
+        </div><!--/.nav-collapse -->
+      </div><!-- container-fluid -->
+    </div><!-- navbar -->
+  </div><!-- container -->
+</template>
+
+<template name="footer">
+<div class="footer"><hr/>
+<p>&copy; 2014 Jon Brown - version 10 Sep 2018<br>Meteor 1.6.1 / Heroku / ASX and AV</p>
+</div> <!-- footer -->
+</template>
+
+<template name="home">
+{{> nav}}  
+<div class="container">
+<h3>Welcome
+<button class="refresh"><span class="glyphicon glyphicon-refresh"></span></button>
+<button class="location"><span class="glyphicon glyphicon-map-marker"></span></button>
+<button class="camera"><span class="glyphicon glyphicon-camera"></span></button>
+</h3>
+{{GreetDebug}}
+<form class="new-stock">
+<input type="text" name="text" placeholder="Enter a stock or index" /><img src='{{BusySymbol}}'>
+</form>
+{{GPSLocation}} {{Camera}}<br>
+<img src='{{GoogleMap}}'>
+<IMG width=95% SRC="https://au.advfn.com/p.php?pid=staticchart&s=ASX:XJO&t=0&p=0&dm=0&width=400&height=100&{{REFRESHED}}" alt="<XJO>"/><br/><br/>
+<!--<br>Table based Heatmap - does not work correctly in Chrome<br>
+<table style="max-width: 95%; font-size: 1px; font-family: monospace">{{#each stocks}}{{> heatmap}}
+{{/each}}</table>
+None-table based Heatmap works in Firefox and Chrome. font-size of 1px is used to ensure minimal gaps - padding etc don't work -->
+
+<span style="max-width: 95%; font-size: 1px; font-family: monospace">
+{{#each stocks}}{{> heatmap}}
+{{/each}} <!-- auto-wrap breaks if this on the same line as above - whoa! -->
+<br>
+</span>
+<br>
+
+<table class="table table-striped">
+  <thead><tr><th style="text-align:left"><button class="sortStocks">{{StockDir}}</button></th>
+  <th>Price</th><th>Change</th><th><button class="sortChange">{{ChangeDir}}</button></th>
+  <th></th></tr></thead>
+  <tbody>
+  {{#each stocks}}
+  {{> stock}}
+  {{/each}}
+  </tbody>
+</table>
+
+<IMG width=95% SRC="https://au.advfn.com/p.php?pid=staticchart&s=DJI&t=6&p=0&dm=0&width=400&height=200&{{REFRESHED}}" alt="<Dow>"/><br>
+<IMG width=95% SRC="https://au.advfn.com/p.php?pid=staticchart&s=NASDAQI:COMPX&t=6&p=0&dm=0&width=400&height=200&{{REFRESHED}}" alt="<Nasdaq>"/><br>
+
+<!-- Removed 10 Sep 2018 <img id="CordovaImage" width="98%" height="98%"/>--> <!-- Any photo goes here scaled to fit. % not supported in HTML5 -->
+{{> footer}}
+{{REFRESHED_Nice}}<br>
+{{GreetDebug}}<br>
+<label class="debug">
+<input type="checkbox" checked="{{Debug}}" /> Debug
+</label>
+</div><!-- container -->
+</template>
+
+<template name="about">
+{{> nav}}  
+<div class="container">
+<h3>About Us</h3>
+<br>
+Progress to date includes:<br><br>
+<ul>
+<li>Bootstrap 3 with dropdowns, glyphicons and action button</li>
+<li>Colour change on values</li>
+<li>Async (via callback) remote server calls with CSV parsing</li>
+<li>Delete, single Update and Refresh enabled</li>
+<li>Cordovo included for vibration feedback and GPS location</li>
+<li>Camera works now too</li>
+<li>New Heatmap - now with Tooltips</li>
+<li>Supports all markets eg IBM.US or TSCO.L - and has better input checking</li>
+<li>Dividends for Australian stocks</li>
+<li>GPS timeout</li>
+<li>Supports indexes eg ^FTSE, ^AXJO, ^NDX, ^GSPC(S&P500)</li>
+<li>Busy graphic while loading data</li>
+<li>Now includes Iron-Router</li>
+<li>Tidied up dividends (now $/share, not c/share) and searches for dividends if a new stock is added</li>
+<li>Added GoogleMaps static image. Refresh now also forgets GPS position and camera image</li>
+<li>Now with Price Sensitive news from ASX.com.au with Cheerio jQuery</li>
+<li>Improved Mongo code by writing only changed parts of records</li>
+<li>News page showing nested template coding</li>
+<li>Callbacks to client from completed server calls</li>
+<li>Debug check box</li>
+<li>Added this.unblock() to reduce full reload from 25 to 2 seconds</li>
+<li>More detailed button version of the heatmap on the News page</li>
+<li>Upgraded to work with Meteor 1.2 and latest Android SDK</li>
+<li>Uses new Yahoo JSON format</li>
+<li>Now using AlphaVantage as Yahoo has gone</li>
+<li>Heatmap only show dollar value for stocks over $1000</li>
+<li>Now using ASX API (Australian stocks only) as AV has a 5 per min cap</li>
+<li>Now combining ASX (AU) and AV (none-AU) APIs</li>
+<li>Changed chart source and added tiny charts to heatmap</li>
+</ul>
+{{> footer}}
+</div> <!-- container -->
+</template>
+
+<template name="help">
+{{> nav}}  
+<div class="container">
+<h3>Help</h3>
+<br>
+Really? You need help with this? Perhaps try some of these ideas....<br><br>
+<ul>
+<li>Try adding a stock like CBA or IBM.US</li>
+<li>Touch or hover on items in the heatmap</li>
+<li>Have a play with the GPS position</li>
+<li>Give the Camera option a go</li>
+</ul>
+{{> footer}}
+</div> <!-- container -->
+</template>
+
+<template name="services">
+{{> nav}}  
+<div class="container">
+<h3>Services</h3>
+<br>
+We're busy building some...
+<img src="busy-rainbow.gif">
+{{> footer}}
+</div> <!-- container -->
+</template>
+
+<template name="news">
+{{> nav}}  
+<div class="container">
+<h3>News</h3>
+<br>
+<span style="max-width: 95%; font-size: 1px; font-family: monospace">
+{{#each stocks}}{{> heatmapNews}}
+{{/each}} <!-- auto-wrap breaks if this on the same line as above - whoa! -->
+<br>
+</span>
+<br>
+<!-- Price sensitive announcements for your stocks-->
+<table class="table table-striped">
+<!--
+<thead><tr><th style="text-align:left">Stock</th>
+<th style="text-align:left">News</th></tr></thead>
+-->
+<tbody>
+{{#each stocks}}
+{{> stocknews}}
+{{/each}}
+</tbody>
+</table>
+{{> footer}}
+</div> <!-- container -->
+</template>
+
+<template name="heatmap">
+<!--<span class="{{getHeatColour chgPC}}">&nbsp;{{code}}&nbsp;</span>-->
+<a href="#" class="xtooltip" id="{{getHeatColourStyle chgPC}}">&nbsp;{{code}}&nbsp;<span><img class="xcallout"/><strong><center>{{last}}</center></strong><center>{{chgPC}}%</center><img src='https://au.advfn.com/p.php?pid=staticchart&s=ASX:{{code}}&t=12&p=0&dm=0&width=50&height=30&{{REFRESHED}}'/><!--t=12 means no axis --></span></a>
+<!-- Alternate style is to use buttons with all the detail. Looks great...
+<button class="xtooltip" id="{{getHeatColourStyle chgPC}}">&nbsp;{{code}}&nbsp;<span><img class="xcallout"/><strong><center>{{last}}</center></strong><center>{{chgPC}}%</center></span></button>
+-->
+</template>
+
+<template name="heatmapNews">
+<button id="{{getHeatColourStyleNews chgPC}}">&nbsp;{{code}}&nbsp;<span><strong><center>{{last}}</center></strong><center>{{chgPC}}%</center></span></button>
+</template>
+
+<!-- This Bootstrap tooltip line works on it's own but not inside a Meteor Template
+<a href="#" data-toggle="tooltip" data-placement="top" data-original-title="$75.63 +0.3%">CBA</a>
+-->
+
+<template name="stock">
+  <tr>
+  <td style="text-align:left"><button class="update">{{code}}</button><a href="{{pathFor 'news'}}"><span class="glyphicon glyphicon-flag" style="visibility: {{News}}"></span></a><br><span class="{{getDateClass XDiv}}">{{dXDiv}}</span></td>
+  <td>{{last}}<br><span class="{{getDateClass Paid}}">{{dPaid}}</span></td>
+  <td><span class="{{getSignColour chg}}">{{chg}}</span><br>{{Franked}}</td>
+  <td><span class="{{getSignClass chgPC}}">{{chgPC}}</span><br>{{Percent}}</td>
+  <td><button class="delete"><span class="glyphicon glyphicon-remove">
+</span></button></td>
+<!-- UNUSED BUT INTERESTING... <td><img style="{position:relative;border:0;left:10px;}" src="favicon.png" onmouseover="this.src='https://au.advfn.com/p.php?pid=staticchart&s=ASX%5E{{code}}&t=0&p=0&dm=0&width=200&height=100&{{REFRESHED}}'" onmouseout="this.src='favicon.png'"/></td>-->
+  </tr>
+</template>
+
+<template name="stocknews">
+  <tr>
+  <td style="text-align:left"><a href="http://www.asx.com.au/asx/statistics/announcements.do?by=asxCode&asxCode={{code}}&timeframe=D&period=T">{{code}}</a></td>
+  <td style="text-align:left">{{News}}</td>
+  </tr>
+</template>
