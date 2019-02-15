@@ -38,6 +38,12 @@
 //
 //               Somehow work out how to pass error values back up the call tree - it's a real pain-in-the-aaa
 //
+// 15 Feb 2019 - Used this insane regex to insert commas in 1000's (eg Dow and Nasdaq) => n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+//
+// 15 Feb 2019 - Now using http://www.freestockcharts.com/Company/ as AV no longer seems to return Nasdaq index - lawsuite? and FSC does not
+//               seem to have the usage restrictions either. It uses these terms for the main indices:
+//               DJI.US => DJ-30, SPX.US => SP-500, IXIC.US => COMPQX (Nasdaq)
+//
 // 10 Sep 2018 - Updated XJO chart to use https://au.advfn.com. Also now checks there is a CordovaImage tag in the HTML before trying to set it :-)
 //               Updated to include Dow and Nasdaq charts and also tiny charts accessed from the heatmap.
 //
@@ -373,7 +379,7 @@ Example error response:
       var dotpos = stock.indexOf(".AX");
       if (dotpos < 0) 
       {
-//      We call another method if not an Australian stock
+//      We call another method if not an Australian stock - only really works with US stocks at the moment
         greet(">>> Stock " + stock + " is not Australian so trying FSC");        
 // Was  Meteor.call('getAVStock', stock, id); // until 15 Feb 2019 - Issue is that we don't know if it worked... have tried passing back via try/throw/catch but no luck
         Meteor.call('getFSCStock', stock, id); // But we don't know if it worked...
@@ -1412,7 +1418,13 @@ if(Meteor.isClient) {
     },
 
     last: function () { // Formats last price
-      return this.last.toFixed(2); // 2 decimal places
+        if (this.last >= 1000)
+        {
+            var n = this.last.toFixed(0); // No cents for large value stocks (eg Dow Jones index)
+            return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","); // Inserts , at 1000's - Thanks StackOverflow!
+        } else {
+            return this.last.toFixed(2); // 2 decimal places ie dollars and cents
+        }
     },
     
     chg: function () { // Formats change
@@ -1455,10 +1467,11 @@ if(Meteor.isClient) {
       return str.substring(0,dotpos); // Perhaps could change to not return anything for heatmap
     },
 
-    last: function () { // Formats last price
+    last: function () { // Formats last price for the HEATMAP
         if (this.last >= 1000)
         {
-            return this.last.toFixed(0); // No cents for large value stocks (eg Dow Jones index) 
+            var n = this.last.toFixed(0); // No cents for large value stocks (eg Dow Jones index)
+            return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","); // Inserts , at 1000's - Thanks StackOverflow!
         } else {
             return this.last.toFixed(2); // 2 decimal places ie dollars and cents
         }
