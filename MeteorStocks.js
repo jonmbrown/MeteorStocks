@@ -373,10 +373,11 @@ Example error response:
       var dotpos = stock.indexOf(".AX");
       if (dotpos < 0) 
       {
-//      We leave if not an Australian stock => Could call AV function instead
-        greet(">>> Stock " + stock + " is not Australian so trying AV");
-        Meteor.call('getAVStock', stock, id); // Issue is that we don't know if it worked... have tried passing back via try/throw/catch but no luck
-        return stock+" processed via AV";
+//      We call another method if not an Australian stock
+        greet(">>> Stock " + stock + " is not Australian so trying FSC");        
+// Was  Meteor.call('getAVStock', stock, id); // until 15 Feb 2019 - Issue is that we don't know if it worked... have tried passing back via try/throw/catch but no luck
+        Meteor.call('getFSCStock', stock, id); // But we don't know if it worked...
+        return stock+" processed via FSC";
       }
 
       var Furl = 'https://www.asx.com.au/asx/1/share/';
@@ -433,6 +434,126 @@ Example error response:
       }); // Callback
       return stock;
     }, //getStock
+
+///////////////////////////////////////////////////////////////////////////////////
+//
+// http://www.freestockcharts.com/Company/COMPQX
+//
+// Relevant code returned is easy to parse (and a tiny 25KB page - needing only first 7KB) eg:
+//
+// <div class="quote-summary" >
+// <div>
+// <span class="quote-last">7,420.38</span>
+// <span class="quote-data up-true">
+//     <span class="quote-arrow arrow-up-true"></span>
+//     <span class="quote-net">5.76</span>
+//     <span class="quote-pct">(<span class='quote-pct-val'>0.08</span>%)</span>
+// </span> 
+// </div>
+// <div>
+///////////////////////////////////////////////////////////////////////////////////
+
+    getFSCStock: function(stock, id) {
+//    SERVER METHOD
+//    Wait in this server call so we don't smash the API calls
+      Meteor._sleepForMs(500);
+//    See https://blog.meteor.com/fun-with-meteor-methods-a0368ee0974c for detail on sleeping and unblock etc
+//!!!   this.unblock(); //!!! Need to keep this so we don't smash the API
+
+      var Furl = 'http://www.freestockcharts.com/Company/';
+
+      var url = Furl;
+
+//    If it's a US stock or index, we don't pass the .US to the API call
+
+      var dotpos = stock.indexOf(".US"); // eg DOCU.US or IXIC.US
+      if (dotpos > 0)
+      {
+        greet("FSC:US stock found");
+      } else {
+        greet("FSC:Non-US stock found - should not happen");
+        return stock; // Get out of here as only for US stocks
+      }
+      var lookup = stock.substring(0,dotpos);
+      if (stock.indexOf("IXIC.US") == 0) lookup = "COMPQX"; // Special case for Nasdaq index (keeping old IXIC code in the DB as it's the usual name)
+      if (stock.indexOf("DJI.US") == 0)  lookup = "DJ-30";
+      if (stock.indexOf("SPX.US") == 0)  lookup = "SP-500";
+
+      url += lookup;
+      greet("Finding stock via " + url);
+
+      HTTP.call("GET", url, function (error, result) {
+//      Callback function:
+        if (error)
+        {
+            greet("Error FSCing:" + error.message);
+            return "<error>";
+        }
+
+// greet("Found (" + result.content.length + " bytes):" + result.content);
+// greet("Found:" + result.content.length + " bytes");
+
+        if (result.content.length < 10000) // Normal returns are around 25Kb (Yahoo was ~150 bytes!)
+        {
+            greet("ERR1:" + stock + " returned strange result from FSC");
+            greet("ERR2:" + stock + " length:" + result.content.length + " bytes");
+            greet("ERR3:" + stock + " content:" + result.content);
+            return "<confused>"; // Would be nice to pass back error message from callback to client but cannot see how to
+        }
+
+// <span class="quote-last">7,420.38</span>
+// <span class="quote-data up-true">
+//     <span class="quote-arrow arrow-up-true"></span>
+//     <span class="quote-net">5.76</span>
+//     <span class="quote-pct">(<span class='quote-pct-val'>0.08</span>%)</span>
+
+        var pStart = result.content.search("quote-last");
+        if (pStart < 0) {
+            greet("FSC parsing failed");
+            return stock; // Failed somehow
+        } else
+        {
+            greet("Found pStart:" + pStart);            
+
+        }
+        pStart +=12; // Skip over quote-last tag
+        var pNext = result.content.substring(pStart).search("/span");
+        greet("Found pNext:" + pNext);            
+        if (pNext < 0) return stock; // Failed somehow
+        var last = result.content.substring(pStart,pStart+pNext-1);
+        greet("Found last:[" + last + "]");
+
+        var pStart = result.content.substring(pNext).search("quote-net");
+        if (pStart < 0) return stock; // Failed somehow
+        greet("Found pStart:" + pStart);
+        pStart += 11; // Skip over quote-net tag, now find closing >
+        var pStart2 = result.content.substring(pStart).search(">");
+        if (pStart2 < 0) return stock; // Failed somehow
+        greet("Found pStart2:" + pStart2);
+        pStart += pStart2+1;
+        pNext = result.content.substring(pStart).search("/span");
+        greet("Found pNext:" + pNext);
+        if (pNext < 0) return stock; // Failed somehow
+        var chg = result.content.substring(pStart,pStart+pNext-1);
+        greet("Found chg:[" + chg + "]");
+
+        last = last.replace(/,/g, ""); // No commas in numbers
+        chg  = chg.replace(/,/g, "");  // No commas in numbers
+
+        var close = last - chg;
+        greet("Created close:[" + close + "]");
+
+        var chgpc = (chg * 100 / close).toFixed(2);
+        greet("Created chg %:[" + chgpc + "]");
+
+        var ticker = stock; // eg DOCU.US
+
+        greet(stock + " values: [" + ticker + "] [" + last + "] [" + chg + "] [" + chgpc + "]");
+        greet("**** Calling updateStock from getFSCStock");
+        Meteor.call('updateStock', stock, id, ticker, last, chg, chgpc); // Issue is that we don't know if it worked...
+      }); // Callback
+      return stock;
+    }, //getFSCStock
 
 ///////////////////////////////////////////////////////////////////////////////////
 
