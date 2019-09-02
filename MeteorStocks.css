@@ -85,6 +85,11 @@ table thead tr th { /* JB */
   border: none;
 }
 
+.onlydivs { /* JB 2 SEP 2019 */
+  background: none; /* Avoid default grey box around glyphicons */
+  border: none;
+}
+
 .update { /* Simple x for update */
   background: none;
   border: none;

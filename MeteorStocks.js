@@ -38,6 +38,8 @@
 //
 //               Somehow work out how to pass error values back up the call tree - it's a real pain-in-the-aaa
 //
+//  2 Sep 2019 - Added onlyDivs functionality to only show stocks with Dividends
+//
 // 15 Feb 2019 - Used this insane regex to insert commas in 1000's (eg Dow and Nasdaq) => n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 //
 // 15 Feb 2019 - Now using http://www.freestockcharts.com/Company/ as AV no longer seems to return Nasdaq index - lawsuite? and FSC does not
@@ -988,6 +990,7 @@ if(Meteor.isClient) {
         Session.set("S-GPSLong", 0); // be off
         
         Session.set("S-camera", '');
+        Session.set("S-onlyDivs", 0); // Show all stocks; not just those with dividends
         Session.set("S-Debug", true); // Debugging ON by default
                     
     }); // Client startup
@@ -1327,6 +1330,18 @@ if(Meteor.isClient) {
         Session.set("S-camera", "No Camera available");
       }
     }, // camera
+
+    "click .onlydivs": function () {
+      // Show only stocks with dividends soon
+      var onlyDivs = Session.get("S-onlyDivs");
+      if (onlyDivs == 0) {
+        greet("Only showing dividend stocks");
+        Session.set("S-onlyDivs", 1); // Now only showing dividend stocks
+      } else {
+        greet("Showing all stocks");
+        Session.set("S-onlyDivs", 0);
+      }    
+    }, // onlyDivs
     
     "click .sortStocks": function () {
       // Sort result by Stock name
@@ -1450,6 +1465,13 @@ if(Meteor.isClient) {
     News: function () { // Identify if there are news items      
         if (this.News) return "visible"; // Was "*";
         return "hidden"; // was "";
+    },
+    
+    OnlyDivs: function () { // If only showing Dividends we set this to hidden if the row does not have a dividend      
+        var onlyDivs = Session.get("S-onlyDivs");
+        if (onlyDivs == 0) return "visible"; // If not showing only divs then show everything
+        if (this.Franked) return "visible"; // There is a dividend amount so show row
+        return "collapse"; // otherwise hide this entire row
     }
   });
 //  ========================    
@@ -1459,12 +1481,12 @@ if(Meteor.isClient) {
 //  ========================    
 
     code: function () { // Formats the stock code (removes any exchange name from the display)
-      var str = this.ticker;
-      if (str.indexOf("DJI.US") == 0 )  return "Dow";
-      if (str.indexOf("SPX.US") == 0 )  return "S&P";
-      if (str.indexOf("IXIC.US") == 0 ) return "Nas";    
-      var dotpos = str.indexOf('.');
-      return str.substring(0,dotpos); // Perhaps could change to not return anything for heatmap
+        var str = this.ticker;
+        if (str.indexOf("DJI.US") == 0 )  return "Dow";
+        if (str.indexOf("SPX.US") == 0 )  return "S&P";
+        if (str.indexOf("IXIC.US") == 0 ) return "Nas";    
+        var dotpos = str.indexOf('.');
+        return str.substring(0,dotpos); // Perhaps could change to not return anything for heatmap
     },
 
     last: function () { // Formats last price for the HEATMAP
@@ -1478,7 +1500,14 @@ if(Meteor.isClient) {
     },
     
     chgPC: function () { // Formats change in percent
-      return this.chgpc.toFixed(1); // 1 decimal place in Heatmap
+        return this.chgpc.toFixed(1); // 1 decimal place in Heatmap
+    },
+
+    OnlyDivs: function () { // If only showing Dividends in Heatmap we set this to hidden if the row does not have a dividend      
+        var onlyDivs = Session.get("S-onlyDivs");
+        if (onlyDivs == 0) return "visible"; // If not showing only divs then show everything
+        if (this.Franked) return "visible"; // There is a dividend amount so show row
+        return "collapse"; // otherwise hide this entire row
     }
     
   });
@@ -1489,9 +1518,9 @@ if(Meteor.isClient) {
 //  ========================    
 
     code: function () { // Formats the stock code (removes any exchange name from the display)
-      var str = this.ticker;      
-      var dotpos = str.indexOf('.');
-      return str.substring(0,dotpos); // Could change to return nothing for heatmap it it's an index but then there will never be any news so pointless
+        var str = this.ticker;      
+        var dotpos = str.indexOf('.');
+        return str.substring(0,dotpos); // Could change to return nothing for heatmap it it's an index but then there will never be any news so pointless
     },
 
     last: function () { // Formats last price
@@ -1499,7 +1528,7 @@ if(Meteor.isClient) {
     },
     
     chgPC: function () { // Formats change in percent
-      return this.chgpc.toFixed(1); // 1 decimal place in Heatmap News
+        return this.chgpc.toFixed(1); // 1 decimal place in Heatmap News
     }
     
   });
@@ -1521,15 +1550,15 @@ if(Meteor.isClient) {
 //  ========================    
 
     code: function () { // Formats the stock code (removes any exchange name from the display)
-      var str = this.ticker;      
-      var dotpos = str.indexOf('.');
-      return str.substring(0,dotpos);
+        var str = this.ticker;      
+        var dotpos = str.indexOf('.');
+        return str.substring(0,dotpos);
     },
     
     News: function () { // Formats stock news
-      if (!this.News) return ""; // No news - should never see this as Mongo call only returns news items
-      var news = this.News.split("^");
-      return news[0]; // This needs work to return all the news items nicely
+        if (!this.News) return ""; // No news - should never see this as Mongo call only returns news items
+        var news = this.News.split("^");
+        return news[0]; // This needs work to return all the news items nicely
     }
 
     });

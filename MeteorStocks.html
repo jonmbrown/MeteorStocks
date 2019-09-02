@@ -53,7 +53,7 @@
 
 <template name="footer">
 <div class="footer"><hr/>
-<p>&copy; 2014 Jon Brown - version 15 Feb 2019<br>Meteor 1.6.1 / Heroku / ASX and FSC</p>
+<p>&copy; 2014 Jon Brown - version 2 Sep 2019<br>Meteor 1.8.1 / Heroku / ASX and FSC</p>
 </div> <!-- footer -->
 </template>
 
@@ -64,7 +64,7 @@
 <button class="refresh"><span class="glyphicon glyphicon-refresh"></span></button>
 <button class="location"><span class="glyphicon glyphicon-map-marker"></span></button>
 <button class="camera"><span class="glyphicon glyphicon-camera"></span></button>
-</h3>
+<button class="onlydivs"><span class="glyphicon glyphicon-usd"></span></button></h3>
 {{GreetDebug}}
 <form class="new-stock">
 <input type="text" name="text" placeholder="Enter a stock or index" /><img src='{{BusySymbol}}'>
@@ -145,6 +145,7 @@ Progress to date includes:<br><br>
 <li>Now combining ASX (AU) and AV (none-AU) APIs</li>
 <li>Changed chart source and added tiny charts to heatmap</li>
 <li>Now using freestockcharts instead of AV (which no longer does IXIC) for US stocks</li>
+<li>Added option to only show stocks paying dividends</li>
 </ul>
 {{> footer}}
 </div> <!-- container -->
@@ -206,7 +207,7 @@ We're busy building some...
 
 <template name="heatmap">
 <!--<span class="{{getHeatColour chgPC}}">&nbsp;{{code}}&nbsp;</span>-->
-<a href="#" class="xtooltip" id="{{getHeatColourStyle chgPC}}">&nbsp;{{code}}&nbsp;<span><img class="xcallout"/><strong><center>{{last}}</center></strong><center>{{chgPC}}%</center><img src='https://au.advfn.com/p.php?pid=staticchart&s=ASX:{{code}}&t=12&p=0&dm=0&width=50&height=30&{{REFRESHED}}'/><!--t=12 means no axis --></span></a>
+<a href="#" class="xtooltip" id="{{getHeatColourStyle chgPC}}" style="visibility:{{OnlyDivs}}">&nbsp;{{code}}&nbsp;<span><img class="xcallout"/><strong><center>{{last}}</center></strong><center>{{chgPC}}%</center><img src='https://au.advfn.com/p.php?pid=staticchart&s=ASX:{{code}}&t=12&p=0&dm=0&width=50&height=30&{{REFRESHED}}'/><!--t=12 means no axis --></span></a>
 <!-- Alternate style is to use buttons with all the detail. Looks great...
 <button class="xtooltip" id="{{getHeatColourStyle chgPC}}">&nbsp;{{code}}&nbsp;<span><img class="xcallout"/><strong><center>{{last}}</center></strong><center>{{chgPC}}%</center></span></button>
 -->
@@ -221,7 +222,7 @@ We're busy building some...
 -->
 
 <template name="stock">
-  <tr>
+  <tr style="visibility:{{OnlyDivs}}">
   <td style="text-align:left"><button class="update">{{code}}</button><a href="{{pathFor 'news'}}"><span class="glyphicon glyphicon-flag" style="visibility: {{News}}"></span></a><br><span class="{{getDateClass XDiv}}">{{dXDiv}}</span></td>
   <td>{{last}}<br><span class="{{getDateClass Paid}}">{{dPaid}}</span></td>
   <td><span class="{{getSignColour chg}}">{{chg}}</span><br>{{Franked}}</td>
