@@ -281,6 +281,7 @@ Sample data:
         if (UVlatest >=  8) UVlevel = "Very High"; // Red
         if (UVlatest >= 11) UVlevel = "Extreme";   // Purple
         greet("UV at "+UVtime+ " was "+UVlatest+" ("+UVlevel+")");
+
 // TO DO: Need to write the UV value to the DB and add code so that it appears on the client
       }); // Callback
       return city;
