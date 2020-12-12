@@ -37,7 +37,7 @@
 // 12 Nov 2020 - Created an IEX Cloud account using jon@jonmbrown.com
 //               50,000 free calls per month, resetting on the first of every month at 00:00:00 UTC
 //               https://iexcloud.io/console/ and https://iexcloud.io/docs/api/#rest-how-to
-//               API PRODUCTION Token: XXXX
+//               API PRODUCTION Token: XXXXXXXXXX
 //               For example:
 //               https://cloud.iexapis.com/stable/stock/DOCU/quote?token=<TOKEN>&filter=symbol,latestPrice,change
 //               Returns:
