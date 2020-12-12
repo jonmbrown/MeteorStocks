@@ -1,5 +1,12 @@
 /* CSS on top of Bootstrap - Jon Brown - Nov 2014 */
 
+/* Needed to remove grey area around new (5th) glyph icon, 5 Nov 2020 - This bugged me for YEARS! */
+button {
+    border: 0;
+    outline:none; /* Don't outline the button when pressed */
+    background: transparent;
+/*    color: navy; */
+}
 
 /* Tool tip below hovered item */
 a.xtooltip {outline:none; color: black }

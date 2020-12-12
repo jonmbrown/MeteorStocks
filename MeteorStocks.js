@@ -32,11 +32,31 @@
 //
 // ** IDEAS **   Lookup analyst recommendations (eg https://au.finance.yahoo.com/q/ao?s=CSL.AX). Parse for tabledata1 to get values
 //
-//  FUTURES??  - Use IEX trading system - it's free, uncapped and returns tiny amount of data - way better than AlphaVantage
-//               Example call:   https://api.iextrading.com/1.0/stock/market/batch?symbols=DOCU&types=quote&filter=latestPrice,change,changePercent
-//               Example return: {"DOCU":{"quote":{"latestPrice":64.85,"change":2.41,"changePercent":0.0386}}}
+//  FUTURES??  - Somehow work out how to pass error values back up the call tree - it's a real pain-in-the-aaa
 //
-//               Somehow work out how to pass error values back up the call tree - it's a real pain-in-the-aaa
+// 12 Nov 2020 - Created an IEX Cloud account using jon@jonmbrown.com
+//               50,000 free calls per month, resetting on the first of every month at 00:00:00 UTC
+//               https://iexcloud.io/console/ and https://iexcloud.io/docs/api/#rest-how-to
+//               API PRODUCTION Token: pk_2c21e780f0a54aa3a415c9efd0761e23
+//               For example:
+//               https://cloud.iexapis.com/stable/stock/DOCU/quote?token=<TOKEN>&filter=symbol,latestPrice,change
+//               Returns:
+//               {"symbol":"DOCU","latestPrice":198.31,"change":0.71}
+//               Which can be converted into a Javascript object like this:
+//                  var txt = '{"symbol":"DOCU","latestPrice":198.31,"change":0.71}';
+//                  var obj = JSON.parse(txt);
+//               then the values referred to like this:
+//                  obj.symbol + ", " + obj.latestPrice + ", " + obj.change;
+//
+//               *** BUT: Data on the S&P 500, Dow Jones Industrial Average, and other major stock indices is not
+//                        currently available on IEX Cloud and is unlikely to be in the future as it costs too much.
+//                        An alternative is to display ETFs that match those indices, such as SPY for the S&P 500 and
+//                        DIA for Dow Jones.... hmmm, maybe not...
+//
+// 11 Nov 2020 - FreeStockCharts stopped working so switched to Bigcharts instead (part of MarketWatch)
+//               For example https://bigcharts.marketwatch.com/quotes/multi.asp?refresh=on&view=Q&msymb=docu
+//
+//  5 Nov 2020 - Added ability to only show home (ASX) stocks in heatmap and stocks list and fixed some CSS issues - finally!
 //
 //  2 Sep 2019 - Added onlyDivs functionality to only show stocks with Dividends
 //
@@ -383,10 +403,13 @@ Example error response:
       if (dotpos < 0) 
       {
 //      We call another method if not an Australian stock - only really works with US stocks at the moment
-        greet(">>> Stock " + stock + " is not Australian so trying FSC");        
+        greet(">>> Stock " + stock + " is not Australian so trying FSC");
+// Older methods are commented out but kept here (and the methods are deleted) for history purposes. The deleted methods
+// are available in older backups of this code.       
 // Was  Meteor.call('getAVStock', stock, id); // until 15 Feb 2019 - Issue is that we don't know if it worked... have tried passing back via try/throw/catch but no luck
-        Meteor.call('getFSCStock', stock, id); // But we don't know if it worked...
-        return stock+" processed via FSC";
+// Was  Meteor.call('getFSCStock', stock, id); // until 11 Nov 2020 - But we don't know if it worked...
+        Meteor.call('getBigChartsStock', stock, id); // We still don't know if it worked...
+        return stock+" processed via BigCharts";
       }
 
       var Furl = 'https://www.asx.com.au/asx/1/share/';
@@ -446,30 +469,33 @@ Example error response:
 
 ///////////////////////////////////////////////////////////////////////////////////
 //
-// http://www.freestockcharts.com/Company/COMPQX
+//  https://bigcharts.marketwatch.com/quotes/multi.asp?refresh=on&view=Q&msymb=docu
+//  
+//  "Real-time last sale data for U.S. stock quotes reflect trades reported through Nasdaq only"
+// - which is the same as MarketWatch.
 //
-// Relevant code returned is easy to parse (and a tiny 25KB page - needing only first 7KB) eg:
+//  15K file returned has this format (could request many at a time perhaps?):
 //
-// <div class="quote-summary" >
-// <div>
-// <span class="quote-last">7,420.38</span>
-// <span class="quote-data up-true">
-//     <span class="quote-arrow arrow-up-true"></span>
-//     <span class="quote-net">5.76</span>
-//     <span class="quote-pct">(<span class='quote-pct-val'>0.08</span>%)</span>
-// </span> 
-// </div>
-// <div>
+//  <td class="symb-col">DOCU</td>
+//  <td class="last-col">198.31</td>
+//  <td class="change-col important positive">
+//  <img class="net-change" src="/content/v0022/images/icons/arrow_up_sm.gif" />&nbsp;+0.71</td>
+//
+//  An invalid stock request returns this (but code doesn't check for it yet):
+//  <div class="not-found">
+//  <span class="label">No symbol found: </span>
+//  <span>invalid</span>
+//
 ///////////////////////////////////////////////////////////////////////////////////
 
-    getFSCStock: function(stock, id) {
+    getBigChartsStock: function(stock, id) {
 //    SERVER METHOD
 //    Wait in this server call so we don't smash the API calls
       Meteor._sleepForMs(500);
 //    See https://blog.meteor.com/fun-with-meteor-methods-a0368ee0974c for detail on sleeping and unblock etc
 //!!!   this.unblock(); //!!! Need to keep this so we don't smash the API
 
-      var Furl = 'http://www.freestockcharts.com/Company/';
+      var Furl = 'https://bigcharts.marketwatch.com/quotes/multi.asp?refresh=on&view=Q&msymb=';
 
       var url = Furl;
 
@@ -478,15 +504,16 @@ Example error response:
       var dotpos = stock.indexOf(".US"); // eg DOCU.US or IXIC.US
       if (dotpos > 0)
       {
-        greet("FSC:US stock found");
+        greet("BigCharts:US stock found");
       } else {
-        greet("FSC:Non-US stock found - should not happen");
+        greet("BigCharts:Non-US stock found - should not happen");
         return stock; // Get out of here as only for US stocks
       }
       var lookup = stock.substring(0,dotpos);
-      if (stock.indexOf("IXIC.US") == 0) lookup = "COMPQX"; // Special case for Nasdaq index (keeping old IXIC code in the DB as it's the usual name)
-      if (stock.indexOf("DJI.US") == 0)  lookup = "DJ-30";
-      if (stock.indexOf("SPX.US") == 0)  lookup = "SP-500";
+      // BigCharts uses these codes for Dow, S&P500 and Nasdaq: DJIA, SPX and COMP
+      if (stock.indexOf("IXIC.US") == 0) lookup = "COMP"; // Special case for Nasdaq index (keeping old IXIC code in the DB as it's the usual name)
+      if (stock.indexOf("DJI.US") == 0)  lookup = "DJIA";
+      if (stock.indexOf("SPX.US") == 0)  lookup = "SPX";
 
       url += lookup;
       greet("Finding stock via " + url);
@@ -495,56 +522,58 @@ Example error response:
 //      Callback function:
         if (error)
         {
-            greet("Error FSCing:" + error.message);
+            greet("Error calling BigCharts:" + error.message);
             return "<error>";
         }
 
 // greet("Found (" + result.content.length + " bytes):" + result.content);
 // greet("Found:" + result.content.length + " bytes");
 
-        if (result.content.length < 10000) // Normal returns are around 25Kb (Yahoo was ~150 bytes!)
+        if (result.content.length < 15000) // Normal returns are around 15Kb (Yahoo was ~150 bytes!)
         {
-            greet("ERR1:" + stock + " returned strange result from FSC");
+            greet("ERR1:" + stock + " returned strange result from BigCharts");
             greet("ERR2:" + stock + " length:" + result.content.length + " bytes");
             greet("ERR3:" + stock + " content:" + result.content);
             return "<confused>"; // Would be nice to pass back error message from callback to client but cannot see how to
         }
 
-// <span class="quote-last">7,420.38</span>
-// <span class="quote-data up-true">
-//     <span class="quote-arrow arrow-up-true"></span>
-//     <span class="quote-net">5.76</span>
-//     <span class="quote-pct">(<span class='quote-pct-val'>0.08</span>%)</span>
+// For US stocks and indices...
+//  <td class="symb-col">DOCU</td>
+//  <td class="last-col">198.31</td>
+//  <td class="change-col important positive">
+//  <img class="net-change" src="/content/v0022/images/icons/arrow_up_sm.gif" />&nbsp;+0.71</td>
 
-        var pStart = result.content.search("quote-last");
+//      Get only the last price and the change. Everything is calculated from these two
+        greet("Callback for stock:" + stock);
+
+//      First search for the latest price...
+        var pStart = result.content.search("td class=\"last-col");
         if (pStart < 0) {
-            greet("FSC parsing failed");
+            greet("BigCharts parsing failed");
             return stock; // Failed somehow
         } else
         {
-            greet("Found pStart:" + pStart);            
-
+//            greet("Last:Found pStart:" + pStart);
         }
-        pStart +=12; // Skip over quote-last tag
-        var pNext = result.content.substring(pStart).search("/span");
-        greet("Found pNext:" + pNext);            
+        pStart +=20; // Skip past found tag
+        var pNext = result.content.substring(pStart).search("<");
+//        greet("Found pNext:" + pNext);            
         if (pNext < 0) return stock; // Failed somehow
-        var last = result.content.substring(pStart,pStart+pNext-1);
+        var last = result.content.substring(pStart,pStart+pNext);
         greet("Found last:[" + last + "]");
 
-        var pStart = result.content.substring(pNext).search("quote-net");
-        if (pStart < 0) return stock; // Failed somehow
-        greet("Found pStart:" + pStart);
-        pStart += 11; // Skip over quote-net tag, now find closing >
-        var pStart2 = result.content.substring(pStart).search(">");
+//      Now continue from where we left off to find the change in price...
+        var pStart2 = result.content.substring(pStart).search("/>&nbsp;");
         if (pStart2 < 0) return stock; // Failed somehow
-        greet("Found pStart2:" + pStart2);
-        pStart += pStart2+1;
-        pNext = result.content.substring(pStart).search("/span");
-        greet("Found pNext:" + pNext);
+//        greet("Found pStart2:" + pStart2);
+        pStart2 = pStart2 + 8; // Skip over nbsp;
+        pNext = result.content.substring(pStart + pStart2).search("<");
+//        greet("Found pNext:" + pNext);
         if (pNext < 0) return stock; // Failed somehow
-        var chg = result.content.substring(pStart,pStart+pNext-1);
+        var chg = result.content.substring(pStart+pStart2,pStart+pStart2+pNext);
         greet("Found chg:[" + chg + "]");
+
+//      Tidy up the last price and change and calculate the close price and percentage change
 
         last = last.replace(/,/g, ""); // No commas in numbers
         chg  = chg.replace(/,/g, "");  // No commas in numbers
@@ -558,191 +587,13 @@ Example error response:
         var ticker = stock; // eg DOCU.US
 
         greet(stock + " values: [" + ticker + "] [" + last + "] [" + chg + "] [" + chgpc + "]");
-        greet("**** Calling updateStock from getFSCStock");
+        greet("**** Calling updateStock from getBigChartsStock");
         Meteor.call('updateStock', stock, id, ticker, last, chg, chgpc); // Issue is that we don't know if it worked...
       }); // Callback
       return stock;
-    }, //getFSCStock
+    }, //getBigChartsStock
 
 ///////////////////////////////////////////////////////////////////////////////////
-
-    getAVStock: function(stock, id) { // AlphaVantage code - commented out 2 Aug 2018 but hopefully can be used for the non-ASX stocks
-//    SERVER METHOD
-//    Wait in this server call so we don't smash the API calls
-      Meteor._sleepForMs(500);
-//    See https://blog.meteor.com/fun-with-meteor-methods-a0368ee0974c for detail on sleeping and unblock etc
-//!!!   this.unblock(); //!!! Need to keep this so we don't smash the API
-
-/**************************************
-
-AlphaVantage example:
-
-https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=ORG.AX&apikey=XU3WHYK1ZHZFZICM
-
-Returns (~20kb):
-
-{
-    "Meta Data": {
-        "1. Information": "Daily Prices (open, high, low, close) and Volumes",
-        "2. Symbol": "WBC.AX",
-        "3. Last Refreshed": "2017-11-06",
-        "4. Output Size": "Compact",
-        "5. Time Zone": "US/Eastern"
-    },
-    "Time Series (Daily)": {
-        "2017-11-06": {
-            "1. open": "32.8200",
-            "2. high": "32.8800",
-            "3. low": "32.4200",
-            "4. close": "32.4900",
-            "5. volume": "3578029"
-        },
-        "2017-11-02": {
-            "1. open": "33.1500",
-            "2. high": "33.3700",
-            "3. low": "32.9400",
-            "4. close": "33.2700",
-            "5. volume": "4501844"
-        }, etc
-
-Can extract change data via:
-
-Change $ = close[0] - close[1]         // close[0] is the current price if the market is open 
-Change % = Change $ / close[1] * 100   // close[1] is the last closing price (ie yesterday)
-
-**************************************/
-
-//    greet("\nWas:" + stock);
-      
-//    COMMENTED OUT NOV 2017
-//    Check for ^ (Yahoo) for index is not required with AlphaVantage asit uses normal codes
-//
-//    Examples of indexes with AV are: 
-//
-//    Dollar Index is DX-Y.NYB  => Will break my code at *+* (below) as contains a - and .NYB
-//    Gold futures is GC=F      => Will break my code at *+* (below) as contains an =
-//    S&P500 is SPX             => Use ^SPX
-//    Dow Jones is DJI          => Use ^DJI 
-//    Nasdaq is IXIC            => Use ^IXIC
-//    BHP in the UK is BLT.L
-//
-//    Cannot find out how to get XAO or XJO unfortunately....
-//
-//    I worked some of these out by Googling the name then guessing based on what Google
-//    comes back with as the index name. Eg try googling Nasdaq Composite
-//
-//    Also found this handy blog:
-//    http://www.the-data-wrangler.com/acquiring-stock-market-data-from-alpha-vantage/
-//
-
-      var Furl = 'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=';
-      var format = '&apikey=XU3WHYK1ZHZFZICM';
-
-      var url = Furl;
-
-//    If it's a US stock or index, we don't pass the .US to the API call
-
-      var dotpos = stock.indexOf(".US");
-      if (dotpos > 0)
-      {
-        greet("AV:US stock found");
-        url += stock.substring(0,dotpos);
-      } else {
-        greet("AV:Non-US stock found");
-        url += stock;
-      }
-      greet("Finding stock via "+url);
-
-      url += format; // Add the API key
-
-      HTTP.call("GET", url, function (error, result) {
-//      Callback function:
-        if (error)
-        {
-            greet("Error AVing:" + error.message); // Added 1 May 2017
-            return "<error>";
-        }
-
-/**************************************
-
-The AlphaVantage way...
-
-var ticker = content["Meta Data"]["2. Symbol"];
-out ("Ticker:"+ticker);
-
-var data = AVData["Time Series (Daily)"];
-
-var Today = Object.keys(data)[0];
-var Yesterday = Object.keys(data)[1];
-out ("Today:", Today, " Yesterday:", Yesterday);
-
-var last = data[Today]["4. close"];
-var close = data[Yesterday]["4. close"];
-out("Last: $"+last+" Close: $"+close);
-
-var chg = (last-close).toFixed(2); 
-var chgpc = (chg * 100 / close).toFixed(2);
-out("Change: $"+chg+" ("+ chgpc + "%)");
-
-Output
-------
-Ticker:NXT.AX
-Today: 2017-11-06  Yesterday: 2017-11-02
-Latest: $5.2500 Close: $5.1600
-Change: $0.09 (1.74%)
-
-If calls are too frequent (~5 per minute or a few per second), will get:
-
-"Information": "Thank you for using Alpha Vantage! 
-Please visit https://www.alphavantage.co/premium/ if you would like to have a higher API call volume."
-
-**************************************/
-
-// greet("Found (" + result.content.length + " bytes):" + result.content);
-// greet("Found:" + result.content.length + " bytes");
-
-        if (result.content.length < 10000) // Normal returns are around 20Kb (Yahoo was ~150 bytes!)
-        {
-            greet("ERR1:" + stock + " returned strange result from AV");
-            greet("ERR2:" + stock + " length:" + result.content.length + " bytes");
-            greet("ERR3:" + stock + " content:" + result.content);
-            return "<confused>"; // Would be nice to pass back error message from callback to client but cannot see how to
-        }
-
-        var content = JSON.parse(result.content); // AV uses JSON
-
-        var ticker = content["Meta Data"]["2. Symbol"];
-//greet ("Found:"+ticker);
-
-//      Special treatment for the main indices (as AV does not return the ticker name, it returns the index full name!)
-        if (ticker.indexOf("Dow Jones") ==0 ) ticker = "DJI";
-        if (ticker.indexOf("S&P") ==0 )       ticker = "SPX";
-        if (ticker.indexOf("NASDAQ") ==0 )    ticker = "IXIC";
-
-        var data = content["Time Series (Daily)"]; 
-////greet ("Data:"+JSON.stringify(data));
-        var Today     = Object.keys(data)[0];
-        var Yesterday = Object.keys(data)[1];
-//greet ("Today:" + Today + ",Yesterday:" + Yesterday);
-
-        var last  = data[Today]["4. close"];
-        var close = data[Yesterday]["4. close"];
-//greet("Last: $"+last+" Close: $"+close);
-
-      var chg = (last-close).toFixed(2); 
-      var chgpc = (chg * 100 / close).toFixed(2);
-//greet("Change: $"+chg+" ("+ chgpc + "%)");
-    
-        if (ticker.indexOf('.') < 0) // If a US stock (no exchange returned) we add .US
-        {
-            ticker += '.US'; // Need to do this so Refresh will work (and not think it's an Australian stock)
-        }    
-        greet(stock + " values: [" + ticker + "] [" + last + "] [" + chg + "] [" + chgpc + "]");
-        greet("**** Calling updateStock from getAVStock");
-        Meteor.call('updateStock', stock, id, ticker, last, chg, chgpc); // Issue is that we don't know if it worked...
-      }); // Callback
-      return stock;
-    }, //getAVStock
 
     getDividends: function(){
 //    SERVER METHOD
@@ -992,6 +843,7 @@ if(Meteor.isClient) {
         
         Session.set("S-camera", '');
         Session.set("S-onlyDivs", 0); // Show all stocks; not just those with dividends
+        Session.set("S-onlyASX", 0);  // Show all stocks; not just those on the ASX
         Session.set("S-Debug", true); // Debugging ON by default
                     
     }); // Client startup
@@ -1344,6 +1196,19 @@ if(Meteor.isClient) {
       }    
     }, // onlyDivs
     
+    "click .onlyASX": function () {
+      // Show only stocks on the ASX
+      var onlyASX = Session.get("S-onlyASX");
+      if (onlyASX == 0) {
+        greet("Only showing ASX stocks");
+        Session.set("S-onlyASX", 1);  // Now only showing ASX stocks
+        Session.set("S-onlyDivs", 0); // Show all ASX, not just dividend stocks
+      } else {
+        greet("Showing all stocks");
+        Session.set("S-onlyASX", 0);
+      }    
+    }, // onlyASX
+
     "click .sortStocks": function () {
       // Sort result by Stock name
       var sorting = Session.get("S-sortStocks");
@@ -1468,11 +1333,22 @@ if(Meteor.isClient) {
         return "hidden"; // was "";
     },
     
-    OnlyDivs: function () { // If only showing Dividends we set this to hidden if the row does not have a dividend      
+    isVisible: function () { // Decide if this stock line should be visible
+        // If showing dividends: Show if there is one, otherwise hide (collapse)
+        // If showing ASX stocks: Show if it is one, else collapse
         var onlyDivs = Session.get("S-onlyDivs");
-        if (onlyDivs == 0) return "visible"; // If not showing only divs then show everything
-        if (this.Franked) return "visible"; // There is a dividend amount so show row
-        return "collapse"; // otherwise hide this entire row
+        if (onlyDivs == 1) // Dividends only
+        {
+            if (this.Franked) return "visible"; // There is a dividend, so visible
+            return "collapse"; // otherwise hide this entire row    
+        }
+        var onlyASX = Session.get("S-onlyASX");
+        if (onlyASX == 1) // ASX shares only
+        {
+            var aussie = this.ticker.indexOf(".AX");
+            if (aussie < 0) return "collapse"; // This is not ASX so hide
+        }
+        return "visible"; // otherwise show
     }
   });
 //  ========================    
@@ -1504,11 +1380,22 @@ if(Meteor.isClient) {
         return this.chgpc.toFixed(1); // 1 decimal place in Heatmap
     },
 
-    OnlyDivs: function () { // If only showing Dividends in Heatmap we set this to hidden if the row does not have a dividend      
+    isVisible: function () { // Decide if this stock in the heatmap
+        // If showing dividends: Show if there is one, otherwise hide (collapse)
+        // If showing ASX stocks: Show if it is one, else collapse
         var onlyDivs = Session.get("S-onlyDivs");
-        if (onlyDivs == 0) return "visible"; // If not showing only divs then show everything
-        if (this.Franked) return "visible"; // There is a dividend amount so show row
-        return "collapse"; // otherwise hide this entire row
+        if (onlyDivs == 1) // Dividends only
+        {
+            if (this.Franked) return "visible"; // There is a dividend, so visible
+            return "collapse"; // otherwise hide this entire row    
+        }
+        var onlyASX = Session.get("S-onlyASX");
+        if (onlyASX == 1) // ASX shares only
+        {
+            var aussie = this.ticker.indexOf(".AX");
+            if (aussie < 0) return "collapse"; // This is not ASX so hide
+        }
+        return "visible"; // otherwise show
     }
     
   });
