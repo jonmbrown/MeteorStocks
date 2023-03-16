@@ -34,10 +34,10 @@
 //
 //  FUTURES??  - Somehow work out how to pass error values back up the call tree - it's a real pain-in-the-aaa
 //
-// 12 Nov 2020 - Created an IEX Cloud account using jon@jonmbrown.com
+// 12 Nov 2020 - Created an IEX Cloud account *** BUT NOT CURRENTLY USING THIS ***
 //               50,000 free calls per month, resetting on the first of every month at 00:00:00 UTC
 //               https://iexcloud.io/console/ and https://iexcloud.io/docs/api/#rest-how-to
-//               API PRODUCTION Token: pk_2c21e780f0a54aa3a415c9efd0761e23
+//               API PRODUCTION Token is in Gmail. If used in code make sure that you DO NOT PUBLISH TO GITHUB!
 //               For example:
 //               https://cloud.iexapis.com/stable/stock/DOCU/quote?token=<TOKEN>&filter=symbol,latestPrice,change
 //               Returns:
